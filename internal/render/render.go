@@ -8,8 +8,9 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/surakshith-suvarna/bookings/pkg/config"
-	"github.com/surakshith-suvarna/bookings/pkg/models"
+	"github.com/justinas/nosurf"
+	"github.com/surakshith-suvarna/bookings/internal/config"
+	"github.com/surakshith-suvarna/bookings/internal/models"
 )
 
 var functions = template.FuncMap{}
@@ -22,12 +23,13 @@ func NewTemplates(a *config.AppConfig) {
 }
 
 //AddDefaultData adds a data automatically on multiple pages
-func AddDefaultData(td *models.TemplateData) *models.TemplateData {
+func AddDefaultData(td *models.TemplateData, r *http.Request) *models.TemplateData {
+	td.CSRFToken = nosurf.Token(r)
 	return td
 }
 
 //RenderTemplate renders templates using html/template
-func RenderTemplates(w http.ResponseWriter, tmpl string, td *models.TemplateData) {
+func RenderTemplates(w http.ResponseWriter, r *http.Request, tmpl string, td *models.TemplateData) {
 
 	var tc map[string]*template.Template
 	if app.UseCache {
@@ -44,8 +46,8 @@ func RenderTemplates(w http.ResponseWriter, tmpl string, td *models.TemplateData
 
 	buf := new(bytes.Buffer)
 
-	//adds default data
-	td = AddDefaultData(td)
+	//adds default data to all templates
+	td = AddDefaultData(td, r)
 
 	_ = t.Execute(buf, td)
 
