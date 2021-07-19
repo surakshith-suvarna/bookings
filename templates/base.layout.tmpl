@@ -101,7 +101,20 @@
 			text: msg
 		})
 	}
+
+	//Show alerts if either of the session variables are set
+	{{with .Error}}
+		notify("{{.}}", "error");
+	{{end}}
+
+	{{with .Flash}}
+		notify("{{.}}", "success");
+	{{end}}
 	
+	{{with .Warning}}
+		notify("{{.}}", "warning");
+	{{end}}
+
 	//Notify Modal Module
 	function notifyModal(){
 		let toast = function(c){
