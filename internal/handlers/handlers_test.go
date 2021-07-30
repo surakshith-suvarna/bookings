@@ -6,9 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"strings"
 	"testing"
-	"time"
 
 	"github.com/surakshith-suvarna/bookings/internal/models"
 )
@@ -165,54 +163,7 @@ func TestRepository_PostReservation(t *testing.T) {
 	//	t.Errorf("reservation handler returned wrong response code. Expected %d but received %d", http.StatusTemporaryRedirect, rr.Code)
 	//}
 
-	//test for invalid data
-	/*layout := "2006-01-02"
-	sd, _ := time.Parse(layout, "2050-01-01")
-	ed, _ := time.Parse(layout, "2050-01-02")
-
-	reservation := models.Reservation{
-		StartDate: sd,
-		EndDate:   ed,
-		RoomId:    1,
-	}
-
-	reqBody := fmt.Sprintf("start_date=%s", reservation.StartDate.Format("2006-01-02"))
-	reqBody = fmt.Sprintf("%s&end_date=%s", reqBody, reservation.EndDate.Format("2006-01-02"))
-	reqBody = fmt.Sprintf("%s&%s", reqBody, "first_name=j")
-	reqBody = fmt.Sprintf("%s&%s", reqBody, "last_name=wick")
-	reqBody = fmt.Sprintf("%s&%s", reqBody, "email=wick")
-	reqBody = fmt.Sprintf("%s&%s", reqBody, "phone=555-555-1234")
-	reqBody = fmt.Sprintf("%s&room_id=%d", reqBody, reservation.RoomId)*/
-
-	//Testing session get
-	layout := "2006-01-02"
-	sd, _ := time.Parse(layout, "2050-01-01")
-	ed, _ := time.Parse(layout, "2050-01-02")
-	reservation := models.Reservation{
-		StartDate: sd,
-		FirstName: "John",
-		LastName:  "Wick",
-		Email:     "John@wick.com",
-		Phone:     "444-555-1234",
-		EndDate:   ed,
-		RoomId:    1,
-	}
-
-	req, _ := http.NewRequest("GET", "/make-reservation", nil)
-	ctx := getCtx(req)
-	req = req.WithContext(ctx)
-	session.Put(req.Context(), "reservation", reservation)
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(Repo.PostReservation)
-	handler.ServeHTTP(rr, req)
-
-	if rr.Code != http.StatusOK {
-		t.Errorf("reservation handler returned wrong response code. Expected %d but received %d", http.StatusOK, rr.Code)
-	}
-
 	//Testing when no data is posted
-	//reservebyte, _ := json.Marshal(reservation)
-	//reader := bytes.NewReader(reservebyte)
 	postedData := url.Values{}
 	postedData.Add("start_date", "2050-01-01")
 	postedData.Add("end_date", "2050-01-02")
@@ -220,31 +171,12 @@ func TestRepository_PostReservation(t *testing.T) {
 	postedData.Add("last_name", "wick")
 	postedData.Add("email", "John@wick.com")
 	postedData.Add("phone", "555-555-1234")
-	req, _ = http.NewRequest("POST", "/make-reservation", nil)
-	ctx = getCtx(req)
+	req, _ := http.NewRequest("POST", "/make-reservation", nil)
+	ctx := getCtx(req)
 	req = req.WithContext(ctx)
 	req.Header.Set("Content-Type", "application/x-www-post-urlencoded")
-	rr = httptest.NewRecorder()
-	handler.ServeHTTP(rr, req)
-
-	if rr.Code != http.StatusTemporaryRedirect {
-		t.Errorf("reservation handler returned wrong response code. Expected %d but received %d", http.StatusTemporaryRedirect, rr.Code)
-	}
-
-	// Test for Insert restrictions table
-	postedData = url.Values{}
-	postedData.Add("start_date", "2050-01-01")
-	postedData.Add("end_date", "2050-01-02")
-	postedData.Add("first_name", "John")
-	postedData.Add("last_name", "wick")
-	postedData.Add("email", "John@wick.com")
-	postedData.Add("phone", "555-555-1234")
-	postedData.Add("room_id", "2")
-	req, _ = http.NewRequest("POST", "/make-reservation", strings.NewReader(postedData.Encode()))
-	ctx = getCtx(req)
-	req = req.WithContext(ctx)
-	req.Header.Set("Content-Type", "application/x-www-post-urlencoded")
-	rr = httptest.NewRecorder()
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(Repo.PostReservation)
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusTemporaryRedirect {
