@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/surakshith-suvarna/bookings/internal/config"
+	"github.com/surakshith-suvarna/bookings/internal/driver"
 	"github.com/surakshith-suvarna/bookings/internal/handlers"
 	"github.com/surakshith-suvarna/bookings/internal/helpers"
 	"github.com/surakshith-suvarna/bookings/internal/models"
@@ -25,10 +26,26 @@ var infoLog *log.Logger
 var errorLog *log.Logger
 
 func main() {
-	err := run()
+	db, err := run()
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer db.SQL.Close()
+
+	//Defer Mail Channel to close it when program stops executing
+	defer close(app.MailChan)
+
+	//Listen to the mail channel
+	fmt.Println("Starting Mail Listener")
+	listenForMail()
+
+	testmail := models.MailData{
+		From:    "s@test.com",
+		To:      "nk@test.com",
+		Subject: "test subject",
+		Content: "This is test email",
+	}
+	app.MailChan <- testmail
 
 	//http.HandleFunc("/", handlers.Repo.Home)
 	//http.HandleFunc("/about", handlers.Repo.About)
@@ -44,9 +61,17 @@ func main() {
 	log.Fatal(err)
 }
 
-func run() error {
+func run() (*driver.DB, error) {
 	//What type of data is stored in session
 	gob.Register(models.Reservation{})
+	gob.Register(models.User{})
+	gob.Register(models.Room{})
+	gob.Register(models.Restriction{})
+
+	//Create channel for mailData
+	mailChan := make(chan models.MailData)
+	//PRovides access to channel across our app
+	app.MailChan = mailChan
 
 	//change this to true when in Production
 	app.InProduction = false
@@ -65,19 +90,27 @@ func run() error {
 
 	app.Session = session
 
+	//Initialize DB Repo (Connect to DB)
+	log.Println("connecting to datbase....")
+	db, err := driver.ConnectSQL("host=localhost port=5432 dbname=bookings user=postgres password=R00t@ss001")
+	if err != nil {
+		log.Fatal("Cannot connect to database..")
+	}
+	log.Println("Connected to Database...")
+
 	tc, err := render.CreateTemplateCache()
 	if err != nil {
 		log.Fatal("cannot create template cache")
-		return err
+		return nil, err
 	}
 
 	app.TemplateCache = tc
 	app.UseCache = false
 
-	repo := handlers.NewRepo(&app)
+	repo := handlers.NewRepo(&app, db)
 	handlers.NewHandlers(repo)
 
-	render.NewTemplates(&app)
+	render.NewRenderer(&app)
 	helpers.NewHelpers(&app)
-	return nil
+	return db, nil
 }
