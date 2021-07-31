@@ -11,7 +11,7 @@ import (
 func (m *testDBRepo) InsertReservation(res models.Reservation) (int, error) {
 	//If roomID is 2 then fail otherwise pass
 	if res.RoomId == 2 {
-		return 1, errors.New("insertion failed")
+		return 0, errors.New("insertion failed")
 	}
 
 	return 0, nil
@@ -19,7 +19,9 @@ func (m *testDBRepo) InsertReservation(res models.Reservation) (int, error) {
 
 //InsertRoomRestriction inserts a room restriction into the database
 func (m *testDBRepo) InsertRoomRestriction(r models.RoomRestriction) error {
-
+	if r.RoomId == 1000 {
+		return errors.New("insert restrictions failed")
+	}
 	return nil
 }
 
@@ -46,4 +48,17 @@ func (m *testDBRepo) GetRoomById(id int) (models.Room, error) {
 	}
 
 	return room, nil
+}
+
+func (m *testDBRepo) GetUserById(id int) (models.User, error) {
+	var u models.User
+	return u, nil
+}
+
+func (m *testDBRepo) UpdateUser(u models.User) error {
+	return nil
+}
+
+func (m *testDBRepo) Authenticate(email, checkpassword string) (int, string, error) {
+	return 1, "", nil
 }

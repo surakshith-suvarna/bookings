@@ -1,7 +1,10 @@
 package main
 
 import (
+	"fmt"
+	"io/ioutil"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/surakshith-suvarna/bookings/internal/models"
@@ -31,7 +34,18 @@ func sendMsg(m models.MailData) {
 	}
 	email := mail.NewMSG()
 	email.AddTo(m.To).SetFrom(m.From).SetSubject(m.Subject)
-	email.SetBody(mail.TextHTML, m.Content)
+	if m.Template == "" {
+		email.SetBody(mail.TextHTML, m.Content)
+	} else {
+		data, err := ioutil.ReadFile(fmt.Sprintf("./email-templates/%s", m.Template))
+		if err != nil {
+			errorLog.Println(err)
+		}
+		template := string(data)
+		message := strings.Replace(template, "[%body%]", m.Content, 1)
+		email.SetBody(mail.TextHTML, message)
+
+	}
 
 	if email.Error != nil {
 		log.Println(email.Error)

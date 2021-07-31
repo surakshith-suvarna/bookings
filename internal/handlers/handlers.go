@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -207,6 +208,40 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
+
+	//Send email to user
+	htmlMessage := fmt.Sprintf(`<strong>Reservation Confirmed</strong></br>
+					</br>
+					<p>Dear %s</p></br>
+					<p>Kindly find your reservation details below</br>
+					<ul>
+						<li>Room Type: %s</li>
+						<li>Arrival: %s</li>
+						<li>Departure: %s</li>
+					</ul></p>`, reservation.FirstName, reservation.Room.RoomName, reservation.StartDate.Format("2006-01-02"),
+		reservation.EndDate.Format("2006-01-02"))
+	userMail := models.MailData{
+		From:     "bookings@domain.com",
+		To:       reservation.Email,
+		Subject:  "Reservation Confirmation",
+		Content:  htmlMessage,
+		Template: "basic.html",
+	}
+	m.App.MailChan <- userMail
+
+	//Sent email to property owner
+	ownerMsg := fmt.Sprintf(`
+				<strong>Reservation  Confirmed</strong></br>
+				<p>Room '%s' has been booked from %s to %s by %s</p>`, reservation.Room.RoomName,
+		reservation.StartDate, reservation.EndDate, reservation.FirstName)
+
+	ownerMail := models.MailData{
+		From:    "owner@domain.com",
+		To:      "owner@domain.com",
+		Subject: "Reservation Booked",
+		Content: ownerMsg,
+	}
+	m.App.MailChan <- ownerMail
 
 	m.App.Session.Put(r.Context(), "reservation", reservation)
 
@@ -422,4 +457,11 @@ func (m *Repository) BookRoom(w http.ResponseWriter, r *http.Request) {
 	res.Room.RoomName = room.RoomName
 	m.App.Session.Put(r.Context(), "reservation", res)
 	http.Redirect(w, r, "/make-reservation", http.StatusSeeOther)
+}
+
+func (m *Repository) ShowLogin(w http.ResponseWriter, r *http.Request) {
+	render.Template(w, r, "login.page.tmpl", &models.TemplateData{
+		Form: forms.New(nil),
+	})
+
 }
