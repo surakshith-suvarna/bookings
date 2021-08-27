@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/gob"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -54,19 +55,35 @@ func main() {
 }
 
 func run() (*driver.DB, error) {
-	//What type of data is stored in session
+	//What type of data is stored in session (The data types allowed in session. If required add new ones here)
 	gob.Register(models.Reservation{})
 	gob.Register(models.User{})
 	gob.Register(models.Room{})
 	gob.Register(models.Restriction{})
+	gob.Register(map[string]int{})
 
+	inProduction := flag.Bool("production", true, "App in Production")
+	useCache := flag.Bool("cache", true, "Use cache for template")
+	dbHost := flag.String("host", "localhost", "DB Host")
+	dbName := flag.String("dbname", "", "DB Name")
+	dbUser := flag.String("dbuser", "", "DB User")
+	dbPass := flag.String("dbpass", "", "DB Pass")
+	dbPort := flag.String("dbport", "5432", "DB Port")
+	dbSSL := flag.String("dbssl", "disable", "Database SSL Settings (disable, prefer, require)")
+
+	flag.Parse()
+	if *dbName == "" || *dbUser == "" || *dbPass == "" {
+		fmt.Println("Required Flags are empty")
+		os.Exit(1)
+	}
 	//Create channel for mailData
 	mailChan := make(chan models.MailData)
 	//PRovides access to channel across our app
 	app.MailChan = mailChan
 
 	//change this to true when in Production
-	app.InProduction = false
+	//app.InProduction = false
+	app.InProduction = *inProduction
 
 	infoLog = log.New(os.Stdout, "Info\t", log.Ldate|log.Ltime)
 	app.InfoLog = infoLog
@@ -84,7 +101,9 @@ func run() (*driver.DB, error) {
 
 	//Initialize DB Repo (Connect to DB)
 	log.Println("connecting to datbase....")
-	db, err := driver.ConnectSQL("host=localhost port=5432 dbname=bookings user=postgres password=R00t@ss001")
+	connecttionString := fmt.Sprintf("host=%s port=%s dbname=%s user=%s password=%s sslmode=%s", *dbHost, *dbPort, *dbName, *dbUser, *dbPass, *dbSSL)
+	db, err := driver.ConnectSQL(connecttionString)
+	//db, err := driver.ConnectSQL("host=localhost port=5432 dbname=bookings user=postgres password=R00t@ss001")
 	if err != nil {
 		log.Fatal("Cannot connect to database..")
 	}
@@ -97,7 +116,8 @@ func run() (*driver.DB, error) {
 	}
 
 	app.TemplateCache = tc
-	app.UseCache = false
+	//app.UseCache = false
+	app.UseCache = *useCache
 
 	repo := handlers.NewRepo(&app, db)
 	handlers.NewHandlers(repo)

@@ -17,11 +17,11 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dard bg-dark">
         <a class="navbar-brand" href="#">Navbar</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
       
-        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <div class="collapse navbar-collapse" id="navbarContent">
           <ul class="navbar-nav mr-auto">
             <li class="nav-item active">
               <a class="nav-link" href="/">Home <span class="sr-only">(current)</span></a>
@@ -43,8 +43,18 @@
             <li class="nav-item">
               <a class="nav-link" href="/contact" tabindex="-1" aria-disabled="true">Contact</a>
             </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/user/login" tabindex="-1" aria-disabled="true">Login</a>
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Admin
+              </a>
+              <div class="dropdown-menu" aria-labelledby="adminDropdown">
+                {{if eq .IsAuthenticated 1}}
+                  <a class="dropdown-item" href="/admin/dashboard">Dashboard</a>
+                  <a class="dropdown-item" href="/user/logout">Logout</a>
+                {{else}}
+                  <a class="dropdown-item" href="/user/login">Login</a>
+                {{end}}
+              </div>  
             </li>
           </ul>
         </div>

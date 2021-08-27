@@ -7,13 +7,20 @@ import (
 	"html/template"
 	"net/http"
 	"path/filepath"
+	"time"
 
 	"github.com/justinas/nosurf"
 	"github.com/surakshith-suvarna/bookings/internal/config"
 	"github.com/surakshith-suvarna/bookings/internal/models"
 )
 
-var functions = template.FuncMap{}
+//This allows functions defined in this to be used by any templates
+var functions = template.FuncMap{
+	"formatDate":         FormatDate,
+	"formatCalendarDate": FormatCalendarDate,
+	"iterate":            Iterate,
+	"add":                Add,
+}
 
 var app *config.AppConfig
 var pathToTemplates = "./templates"
@@ -23,12 +30,41 @@ func NewRenderer(a *config.AppConfig) {
 	app = a
 }
 
+//Formats Date in string format YYYY-MM-DD
+func FormatDate(t time.Time) string {
+	return t.Format("2006-01-02")
+}
+
+//FormatCalendarDate formats the date in format specified
+func FormatCalendarDate(t time.Time, f string) string {
+	return t.Format(f)
+}
+
+//Iterate can be used instead of for loops in template as Go templates do not have for loops
+func Iterate(count int) []int {
+	var i int
+	var items []int
+
+	for i = 0; i < count; i++ {
+		items = append(items, i)
+	}
+	return items
+}
+
+//Add adds two values within template
+func Add(a, b int) int {
+	return a + b
+}
+
 //AddDefaultData adds a data automatically on multiple pages (all Templates)
 func AddDefaultData(td *models.TemplateData, r *http.Request) *models.TemplateData {
 	td.Flash = app.Session.PopString(r.Context(), "flash")
 	td.Error = app.Session.PopString(r.Context(), "error")
 	td.Warning = app.Session.PopString(r.Context(), "warning")
 	td.CSRFToken = nosurf.Token(r)
+	if app.Session.Exists(r.Context(), "user_id") {
+		td.IsAuthenticated = 1
+	}
 	return td
 }
 
@@ -81,7 +117,7 @@ func CreateTemplateCache() (map[string]*template.Template, error) {
 
 	for _, page := range pages {
 		name := filepath.Base(page)
-		fmt.Println("page accessed is", page)
+		//fmt.Println("page accessed is", page)
 		ts, err := template.New(name).Funcs(functions).ParseFiles(page)
 		if err != nil {
 			return myCache, err

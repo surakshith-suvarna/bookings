@@ -15,3 +15,6 @@
 .datepicker{
   z-index: 10000;
 }
+.navbar-dark .navbar-toggler-icon {
+  background-image: url("data:image/svg+xml;..");
+}
